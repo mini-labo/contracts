@@ -8,8 +8,9 @@ import "openzeppelin-contracts/contracts/token/ERC721/extensions/ERC721Enumerabl
 import "base64/base64.sol";
 
 import "./interfaces/IMiniDataRepository.sol";
+import "./interfaces/IMiniToken.sol";
 
-contract MiniToken is ERC721Enumerable {
+contract MiniToken is IMiniToken, ERC721Enumerable {
     IMiniDataRepository dataRepository;
 
     uint256 public tokenCounter;
@@ -17,8 +18,6 @@ contract MiniToken is ERC721Enumerable {
     constructor(address _dataRepository) ERC721("Mini", "MINI") {
         dataRepository = IMiniDataRepository(_dataRepository);       
     }
-
-    event TokenCreated(uint256 indexed tokenId);
 
     // TODO: access restriction (post auction mechanism)
     function mintToken() public {
@@ -31,5 +30,9 @@ contract MiniToken is ERC721Enumerable {
 
     function tokenURI(uint256 _tokenId) public view override returns (string memory) {
         return string(dataRepository.tokenMetadata(_tokenId));
+    }
+
+    function nextTokenId() external view returns (uint256) {
+        return tokenCounter + 1;
     }
 }

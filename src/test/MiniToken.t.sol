@@ -14,7 +14,6 @@ contract User is IERC721Receiver {
     }
 
     function onERC721Received(address _operator, address _from, uint256 _tokenId, bytes calldata _data) external override returns(bytes4) {
-        string memory tokenMetadata = m.tokenURI(_tokenId);
         return bytes4(keccak256("onERC721Received(address,address,uint256,bytes)"));
     }
 

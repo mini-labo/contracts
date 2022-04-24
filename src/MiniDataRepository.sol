@@ -8,8 +8,10 @@ import "openzeppelin-contracts/contracts/access/Ownable.sol";
 import "sstore2/SSTORE2.sol";
 import "base64/base64.sol";
 
+import "./interfaces/IMiniDataRepository.sol";
+
 // repository for MINI token metadata
-contract MiniDataRepository is Ownable {
+contract MiniDataRepository is IMiniDataRepository, Ownable {
     address public miniTokenContract;
 
     // The curators are addresses whitelisted to add data to the repository.
