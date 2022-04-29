@@ -26,15 +26,16 @@ contract MiniTokenTest is DSTest {
     MiniToken minitoken;
     MiniDataRepository dataRepository;
     User user;
+    bytes public genesisByteData;
 
     string public _genesisTokenData = 'data:image/svg+xml;base64,PHN2ZyBpbWFnZS1yZW5kZXJpbmc9InBpeGVsYXRlZCIgcHJlc2VydmVBc3BlY3RSYXRpbz0ieE1pbllNaW4gbWVldCIgdmlld0JveD0iMCAwIDM1MCAzNTAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiID4gPGltYWdlIHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIHhsaW5rOmhyZWY9ImRhdGE6aW1hZ2UvYm1wO2Jhc2U2NCxRazBDQVFBQUFBQUFBSUlBQUFCc0FBQUFJQUFBQUNBQUFBQUJBQUVBQUFBQUFJQUFBQUFBQUFBQUFBQUFBQUlBQUFBQ0FBQUFBQUQvQUFEL0FBRC9BQUFBQUFBQS8wSkhVbk1BQUFBQUFBQUFBQUFBQUVBQUFBQUFBQUFBQUFBQUFFQUFBQUFBQUFBQUFBQUFBRUFBQUFBQUFBQUFBQUFBQUFELy8vOEFBQUFBQUFBQUFBQUFBQUFBQUE1d0FBQVJpQUFBRTVBQUFCLzRBQUIvL0FBQW4vb0FBSS82QUFCUDlBQUFKK2dBQUJad0FBQVA4QUFBRUFnQUFHQUVBQUQwSmdBRDlDY0FBZklYQUFINER3QUIvQThBQVA0ZkFBRC92Z0FBZi80QUFELzhBQUFmK0FBQUorUUFBRXBpQUFCQmtnQUFJa1FBQUJ3NEFBQUFBQUFBQUFBQSIgLz4gPC9zdmc+Cg==';
 
     function setUp() public {
         dataRepository = new MiniDataRepository();
         minitoken = new MiniToken(address(dataRepository)); 
-        bytes memory genesisTokenData = dataRepository.formatTokenData('test', 'test_description', '{\"test_attribute\":\"test\"}', _genesisTokenData);
+        genesisByteData = dataRepository.formatTokenData('test', 'test_description', '{\"test_attribute\":\"test\"}', _genesisTokenData);
         dataRepository.setMiniTokenAddress(address(minitoken));
-        dataRepository.addData(genesisTokenData);
+        dataRepository.addData(genesisByteData);
         user = new User(minitoken);
     }
 
@@ -49,6 +50,19 @@ contract MiniTokenTest is DSTest {
 
     function testURIRetrieval() public {
         user.mintMiniToken();
+        assertEq(minitoken.tokenURI(0), string(genesisByteData));
         console.log(minitoken.tokenURI(0));
+    }
+
+    function testMintIncrementTokenId() public {
+        dataRepository.addData(genesisByteData); // data inserted for id 1
+
+        user.mintMiniToken();
+        user.mintMiniToken();
+        user.mintMiniToken();
+
+        assertEq(minitoken.tokenURI(0), string(genesisByteData));
+        assertEq(minitoken.tokenURI(1), string(genesisByteData)); 
+        assertEq(minitoken.tokenURI(2), ''); // no data inserted for id 2
     }
 }

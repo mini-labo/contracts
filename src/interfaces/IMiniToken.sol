@@ -7,6 +7,8 @@ pragma solidity ^0.8.10;
 interface IMiniToken {
     function mintToken() external;
 
+    function mintTokenTo(address to) external;
+
     function nextTokenId() external view returns (uint256);
 
     event TokenCreated(uint256 indexed tokenId);

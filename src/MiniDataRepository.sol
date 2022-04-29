@@ -9,10 +9,11 @@ import "sstore2/SSTORE2.sol";
 import "base64/base64.sol";
 
 import "./interfaces/IMiniDataRepository.sol";
+import "./interfaces/IMiniToken.sol";
 
 // repository for MINI token metadata
 contract MiniDataRepository is IMiniDataRepository, Ownable {
-    address public miniTokenContract;
+    address public miniTokenAddress;
 
     // The curators are addresses whitelisted to add data to the repository.
     mapping(address => bool) curatorAddresses;
@@ -23,9 +24,6 @@ contract MiniDataRepository is IMiniDataRepository, Ownable {
     // id of next dataset to be inserted into repository
     uint256 private nextDataId;
     
-    // id of the next token to be minted
-    uint256 private nextTokenId;
-
     constructor() {
         curatorAddresses[msg.sender] = true;
     }
@@ -46,7 +44,7 @@ contract MiniDataRepository is IMiniDataRepository, Ownable {
     // This will not be possible to invoke once data has been associated with a token or auction.
     function editData(uint256 _id, bytes memory _encodedMetadata) external onlyCurator {
         // token has not been minted, and is not being auctioned (next to be minted)
-        require(_id > nextTokenId, "data can no longer be edited");
+        require(_id > IMiniToken(miniTokenAddress).nextTokenId(), "data can no longer be edited");
         require(_encodedMetadata.length < 4000, "metadata must be less than 4000 bytes");
 
         address newDataAddress = SSTORE2.write(_encodedMetadata);
@@ -77,13 +75,8 @@ contract MiniDataRepository is IMiniDataRepository, Ownable {
         );
     }
 
-    function incrementNextTokenId() external {
-        require(msg.sender == miniTokenContract, "invalid sender");
-        nextTokenId = nextTokenId += 1; 
-    }
-
     function setMiniTokenAddress(address _miniToken) external onlyOwner {
-        miniTokenContract = _miniToken;
+        miniTokenAddress = _miniToken;
     }
 
     function addCurator(address _newCurator) external onlyOwner {

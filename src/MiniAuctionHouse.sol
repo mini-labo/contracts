@@ -161,9 +161,11 @@ contract MiniAuctionHouse is IMiniAuctionHouse, PausableUpgradeable, ReentrancyG
 
         if (_auction.bidder == address(0)) {
             // no bids
-            // TODO: decide what to do here. mint to treasury?
+            // restart auction with same token. TODO: add override
+            _createAuction();
         } else {
             // mint to winner
+            miniToken.mintTokenTo(_auction.bidder);
         }
 
         if (_auction.amount > 0) {
