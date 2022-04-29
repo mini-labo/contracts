@@ -54,6 +54,15 @@ contract MiniAuctionHouse is IMiniAuctionHouse, PausableUpgradeable, ReentrancyG
     ) external initializer {
         __Pausable_init();
         __ReentrancyGuard_init();
+        __Ownable_init();
+
+        _pause();
+
+        miniToken = _mini;
+        weth = _weth;
+        timeBuffer = _timeBuffer;
+        reservePrice = _reservePrice;
+        minBidIncrementPercentage = _minBidIncrementPercentage;
         duration = _duration;
     }
 
@@ -63,15 +72,15 @@ contract MiniAuctionHouse is IMiniAuctionHouse, PausableUpgradeable, ReentrancyG
         _createAuction();
     }
 
-    // settle auction only. For use when auction processing is paused
+    // settle auction only, without creating a new auction. For use when auction processing is paused
     function settleAuction() external override whenPaused nonReentrant {
         _settleAuction();
     }
 
-    function createBid(uint256 miniId) external payable override nonReentrant {
+    function createBid(uint256 _miniId) external payable override nonReentrant {
         IMiniAuctionHouse.Auction memory _auction = auction;
 
-        require(_auction.miniId == miniId, "provided id not currently being auctioned");
+        require(_auction.miniId == _miniId, "provided id not currently being auctioned");
         require(block.timestamp < _auction.endTime, "auction has ended");
         require(msg.value >= reservePrice, "must bid above reservePrice");
         require(
@@ -165,7 +174,7 @@ contract MiniAuctionHouse is IMiniAuctionHouse, PausableUpgradeable, ReentrancyG
             _createAuction();
         } else {
             // mint to winner
-            miniToken.mintTokenTo(_auction.bidder);
+            miniToken.mintTokenTo(msg.sender);
         }
 
         if (_auction.amount > 0) {
