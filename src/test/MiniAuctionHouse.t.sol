@@ -2,11 +2,20 @@ pragma solidity 0.8.10;
 
 import "ds-test/test.sol";
 import "forge-std/console.sol";
+
+import "openzeppelin-contracts/contracts/token/ERC721/IERC721.sol";
 import "../MiniAuctionHouse.sol";
 import "../proxies/MiniAuctionHouseProxy.sol";
 import "../proxies/MiniAuctionHouseProxyAdmin.sol";
 import "../MiniDataRepository.sol";
 import "../MiniToken.sol";
+
+address constant CHEATCODE_ADDRESS = 0x7109709ECfa91a80626fF3989D68f67F5b1DD12D;
+
+interface Vm {
+  // Sets the block.timestamp number to `x`.
+  function warp(uint256 x) external;
+}
 
 contract Owner {
     MiniToken public miniToken;
@@ -15,12 +24,18 @@ contract Owner {
     MiniDataRepository public miniDataRepository;
     MiniAuctionHouse public miniAuctionHouse;
 
+    receive() external payable {
+        console.log('Owner receieved ETH payment:');
+        console.log(msg.value);
+    }
+
     constructor() {
         miniAuctionHouse = new MiniAuctionHouse();
         miniDataRepository = new MiniDataRepository();
         miniToken = new MiniToken(address(miniDataRepository));
         proxyAdmin = new MiniAuctionHouseProxyAdmin();
         proxy = new MiniAuctionHouseProxy(address(miniAuctionHouse), address(proxyAdmin), "");
+        miniToken.setAuctionHouse(address(proxy));
 
         MiniAuctionHouse(address(proxy)).initialize(
             IMiniToken(address(miniToken)),
@@ -59,11 +74,15 @@ contract Owner {
     }
 }
 
-contract User {
+contract User is IERC721Receiver {
     MiniAuctionHouseProxy proxy;    
 
     constructor(address payable _proxyAddress) {
         proxy = MiniAuctionHouseProxy(_proxyAddress);
+    }
+
+    function onERC721Received(address _operator, address _from, uint256 _tokenId, bytes calldata _data) external override returns(bytes4) {
+        return bytes4(keccak256("onERC721Received(address,address,uint256,bytes)"));
     }
 
     function unpauseAuctionHouse() public {
@@ -80,6 +99,10 @@ contract User {
 
     function createNewBid(uint256 _miniId) public payable {
         MiniAuctionHouse(address(proxy)).createBid{ value: msg.value }(_miniId);
+    }
+
+    function settleAuction() public {
+        MiniAuctionHouse(address(proxy)).settleCurrentAndCreateNewAuction();
     }
 }
 
@@ -155,5 +178,54 @@ contract MiniAuctionHouseUserPlaceBidTest is DSTest {
 
     function testFailUserCreateBidBelowReservePrice() public {
         user.createNewBid{ value: 0.1 ether }(1);
+    }
+}
+
+contract MiniAuctionHouseUserSettleAuctionTest is DSTest {
+    Owner owner;
+    User user;
+    Vm vm = Vm(CHEATCODE_ADDRESS);
+
+    function setUp() public {
+        vm.warp(1); // non zero start time for contract logic
+        owner = new Owner();
+        owner.unpauseAuctionHouse();
+
+        user = new User(payable(address(owner.proxy())));
+        user.createNewBid{ value: 1 ether }(1);
+    }
+
+    function testFailUserSettleAuctionBeforeEndTime() public {
+        vm.warp(2);
+        user.settleAuction();
+    }
+
+    function testFailSettleAndCreateAuctionWhenAuctionHousePaused() public {
+        vm.warp(668);
+        owner.pauseAuctionHouse();
+        user.settleAuction();
+    }
+
+    function testUserSettleAuction() public {
+        // sanity check - user has no token to begin with
+        assertEq(IERC721(address(owner.miniToken())).balanceOf(address(user)), 0);
+
+        vm.warp(668);
+        user.settleAuction();
+        // user should receieve token
+        assertEq(IERC721(address(owner.miniToken())).balanceOf(address(user)), 1);
+        // new auction should have started - we can bid on the next ID
+        user.createNewBid{ value: 1 ether }(2);
+    }
+
+    function testOtherUserCanSettleAuction() public {
+        User user2 = new User(payable(address(owner.proxy())));
+
+        vm.warp(668);
+        user2.settleAuction();
+        // user2 gets a token
+        assertEq(IERC721(address(owner.miniToken())).balanceOf(address(user2)), 1);
+        // user doesnt
+        assertEq(IERC721(address(owner.miniToken())).balanceOf(address(user)), 0);
     }
 }

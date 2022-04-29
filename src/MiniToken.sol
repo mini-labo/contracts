@@ -22,14 +22,6 @@ contract MiniToken is IMiniToken, Ownable, ERC721Enumerable {
         dataRepository = IMiniDataRepository(_dataRepository);
     }
 
-    // TODO: access restriction (post auction mechanism)
-    function mintToken() public {
-        _safeMint(msg.sender, tokenCounter);
-        emit TokenCreated(tokenCounter);
-
-        tokenCounter = tokenCounter += 1;
-    }
-
     function mintTokenTo(address to) public {
         require(msg.sender == auctionHouseAddress, "invalid sender");
         _safeMint(to, tokenCounter);
