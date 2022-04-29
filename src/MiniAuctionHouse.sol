@@ -12,6 +12,7 @@ pragma solidity ^0.8.10;
 import "openzeppelin-contracts-upgradeable/contracts/security/PausableUpgradeable.sol";
 import "openzeppelin-contracts-upgradeable/contracts/security/ReentrancyGuardUpgradeable.sol";
 import "openzeppelin-contracts-upgradeable/contracts/access/OwnableUpgradeable.sol";
+import "openzeppelin-contracts/contracts/token/ERC721/IERC721Receiver.sol";
 import "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 
 import "./interfaces/IMiniAuctionHouse.sol";
@@ -174,7 +175,7 @@ contract MiniAuctionHouse is IMiniAuctionHouse, PausableUpgradeable, ReentrancyG
             _createAuction();
         } else {
             // mint to winner
-            miniToken.mintTokenTo(msg.sender);
+            miniToken.mintTokenTo(_auction.bidder);
         }
 
         if (_auction.amount > 0) {

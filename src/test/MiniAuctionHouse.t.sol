@@ -223,9 +223,9 @@ contract MiniAuctionHouseUserSettleAuctionTest is DSTest {
 
         vm.warp(668);
         user2.settleAuction();
-        // user2 gets a token
-        assertEq(IERC721(address(owner.miniToken())).balanceOf(address(user2)), 1);
-        // user doesnt
-        assertEq(IERC721(address(owner.miniToken())).balanceOf(address(user)), 0);
+        // user1 gets a token - they were the winning bidder
+        assertEq(IERC721(address(owner.miniToken())).balanceOf(address(user)), 1);
+        // user2 doesnt, they just settled
+        assertEq(IERC721(address(owner.miniToken())).balanceOf(address(user2)), 0);
     }
 }
