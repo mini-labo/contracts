@@ -46,7 +46,7 @@ contract MiniAuctionHouse is IMiniAuctionHouse, PausableUpgradeable, ReentrancyG
       * @dev This function can only be called once
       */ 
     function initialize(
-        IMiniToken _mini, 
+        address _mini, 
         address _weth,
         uint256 _timeBuffer,
         uint256 _reservePrice,
@@ -59,7 +59,7 @@ contract MiniAuctionHouse is IMiniAuctionHouse, PausableUpgradeable, ReentrancyG
 
         _pause();
 
-        miniToken = _mini;
+        miniToken = IMiniToken(_mini);
         weth = _weth;
         timeBuffer = _timeBuffer;
         reservePrice = _reservePrice;

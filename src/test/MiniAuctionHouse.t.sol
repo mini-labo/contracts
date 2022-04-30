@@ -38,7 +38,7 @@ contract Owner {
         miniToken.setAuctionHouse(address(proxy));
 
         MiniAuctionHouse(address(proxy)).initialize(
-            IMiniToken(address(miniToken)),
+            address(miniToken),
             address(0),
             1,
             0.25 ether,
@@ -54,7 +54,7 @@ contract Owner {
       uint8 _minBidIncrementPercentage,
       uint256 _duration
     ) public {
-        miniAuctionHouse.initialize(miniToken, _weth, _timeBuffer, _reservePrice, _minBidIncrementPercentage, _duration);
+        miniAuctionHouse.initialize(address(miniToken), _weth, _timeBuffer, _reservePrice, _minBidIncrementPercentage, _duration);
     }
 
     function unpauseAuctionHouse() public {
