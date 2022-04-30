@@ -65,8 +65,24 @@ contract Owner {
         MiniAuctionHouse(address(proxy)).pause();
     }
 
-    function getCurrentAuction() public returns (MiniAuctionHouse.Auction memory) {
-        MiniAuctionHouse(address(proxy)).auction();
+    function getCurrentAuction() public view returns (IMiniAuctionHouse.Auction memory _auction) {
+        (
+          uint256 _miniId, 
+          uint256 _amount, 
+          uint256 _startTime, 
+          uint256 _endTime, 
+          address payable _bidder, 
+          bool _settled
+        ) = MiniAuctionHouse(address(proxy)).auction();
+
+        return IMiniAuctionHouse.Auction({
+            miniId: _miniId,
+            amount: _amount,
+            startTime: _startTime,
+            endTime: _endTime,
+            bidder: _bidder,
+            settled: _settled
+        });
     }
 
     function createNewBid(uint256 _miniId) public payable {
@@ -77,11 +93,16 @@ contract Owner {
 contract User is IERC721Receiver {
     MiniAuctionHouseProxy proxy;    
 
+    receive() external payable {
+        console.log('User received ETH payment:');
+        console.log(msg.value);
+    }
+
     constructor(address payable _proxyAddress) {
         proxy = MiniAuctionHouseProxy(_proxyAddress);
     }
 
-    function onERC721Received(address _operator, address _from, uint256 _tokenId, bytes calldata _data) external override returns(bytes4) {
+    function onERC721Received(address, address, uint256, bytes calldata) external pure override returns(bytes4) {
         return bytes4(keccak256("onERC721Received(address,address,uint256,bytes)"));
     }
 
@@ -91,10 +112,6 @@ contract User is IERC721Receiver {
 
     function pauseAuctionHouse() public {
         MiniAuctionHouse(address(proxy)).pause();
-    }
-
-    function getCurrentAuction() public returns (MiniAuctionHouse.Auction memory) {
-        MiniAuctionHouse(address(proxy)).auction();
     }
 
     function createNewBid(uint256 _miniId) public payable {
@@ -133,6 +150,10 @@ contract MiniAuctionHouseOwnerPlaceBidTest is DSTest {
 
     function testOwnerCreateBid() public {
         owner.createNewBid{ value: 1 ether }(1);
+
+        IMiniAuctionHouse.Auction memory currentAuction = owner.getCurrentAuction();
+        assertEq(currentAuction.amount, 1 ether);
+        assertEq(currentAuction.bidder, address(owner));
     }
 
     function testFailOwnerCreateBidBelowReservePrice() public {
@@ -164,6 +185,7 @@ contract MiniAuctionHouseUserFailPauseTest is DSTest {
 contract MiniAuctionHouseUserPlaceBidTest is DSTest {
     Owner owner;
     User user;
+    Vm vm = Vm(CHEATCODE_ADDRESS);
     
     function setUp() public {
         owner = new Owner();
@@ -174,10 +196,39 @@ contract MiniAuctionHouseUserPlaceBidTest is DSTest {
 
     function testUserCreateBid() public {
         user.createNewBid{ value: 1 ether }(1);
+
+        IMiniAuctionHouse.Auction memory currentAuction = owner.getCurrentAuction();
+        assertEq(currentAuction.amount, 1 ether);
+        assertEq(currentAuction.bidder, address(user));
     }
 
     function testFailUserCreateBidBelowReservePrice() public {
         user.createNewBid{ value: 0.1 ether }(1);
+    }
+
+    function testUserBidRefundedWhenOutbid() public {
+        User user2 = new User(payable(address(owner.proxy())));
+
+        user.createNewBid{ value: 1 ether }(1);
+        user2.createNewBid{ value: 1.25 ether }(1);
+
+        assertEq(address(user).balance, 1 ether);
+    }
+
+    function testUserBidAmountAndBidderUpdate() public {
+        User user2 = new User(payable(address(owner.proxy())));
+
+        user.createNewBid{ value: 1 ether }(1);
+        user2.createNewBid{ value: 1.25 ether }(1);
+
+        IMiniAuctionHouse.Auction memory currentAuction = owner.getCurrentAuction();
+        assertEq(currentAuction.amount, 1.25 ether);
+        assertEq(currentAuction.bidder, address(user2));
+    }
+
+    function testFailUserBidExpiredAuction() public {
+        vm.warp(1000000);
+        user.createNewBid{ value: 1 ether }(1);
     }
 }
 

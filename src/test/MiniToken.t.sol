@@ -27,7 +27,7 @@ contract User is IERC721Receiver {
         m = _m;
     }
 
-    function onERC721Received(address _operator, address _from, uint256 _tokenId, bytes calldata _data) external override returns(bytes4) {
+    function onERC721Received(address, address, uint256, bytes calldata) external pure override returns(bytes4) {
         return bytes4(keccak256("onERC721Received(address,address,uint256,bytes)"));
     }
 
