@@ -144,7 +144,7 @@ contract MiniAuctionHouse is IMiniAuctionHouse, PausableUpgradeable, ReentrancyG
     // Auction details are stored in state. The mini to be auctioned is fetched from the data repository entry
     // corresponding to the next ID to be minted.
     function _createAuction() internal {
-        uint256 miniId = miniToken.nextTokenId();
+        uint256 miniId = miniToken.nextTokenId() - 1; // index starting at 0
         uint256 startTime = block.timestamp;
         uint256 endTime = startTime + duration;
 

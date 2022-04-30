@@ -149,7 +149,7 @@ contract MiniAuctionHouseOwnerPlaceBidTest is DSTest {
     }
 
     function testOwnerCreateBid() public {
-        owner.createNewBid{ value: 1 ether }(1);
+        owner.createNewBid{ value: 1 ether }(0);
 
         IMiniAuctionHouse.Auction memory currentAuction = owner.getCurrentAuction();
         assertEq(currentAuction.amount, 1 ether);
@@ -157,7 +157,7 @@ contract MiniAuctionHouseOwnerPlaceBidTest is DSTest {
     }
 
     function testFailOwnerCreateBidBelowReservePrice() public {
-        owner.createNewBid{ value: 0.1 ether }(1);
+        owner.createNewBid{ value: 0.1 ether }(0);
     }
 }
 
@@ -195,7 +195,7 @@ contract MiniAuctionHouseUserPlaceBidTest is DSTest {
     }
 
     function testUserCreateBid() public {
-        user.createNewBid{ value: 1 ether }(1);
+        user.createNewBid{ value: 1 ether }(0);
 
         IMiniAuctionHouse.Auction memory currentAuction = owner.getCurrentAuction();
         assertEq(currentAuction.amount, 1 ether);
@@ -203,14 +203,14 @@ contract MiniAuctionHouseUserPlaceBidTest is DSTest {
     }
 
     function testFailUserCreateBidBelowReservePrice() public {
-        user.createNewBid{ value: 0.1 ether }(1);
+        user.createNewBid{ value: 0.1 ether }(0);
     }
 
     function testUserBidRefundedWhenOutbid() public {
         User user2 = new User(payable(address(owner.proxy())));
 
-        user.createNewBid{ value: 1 ether }(1);
-        user2.createNewBid{ value: 1.25 ether }(1);
+        user.createNewBid{ value: 1 ether }(0);
+        user2.createNewBid{ value: 1.25 ether }(0);
 
         assertEq(address(user).balance, 1 ether);
     }
@@ -218,8 +218,8 @@ contract MiniAuctionHouseUserPlaceBidTest is DSTest {
     function testUserBidAmountAndBidderUpdate() public {
         User user2 = new User(payable(address(owner.proxy())));
 
-        user.createNewBid{ value: 1 ether }(1);
-        user2.createNewBid{ value: 1.25 ether }(1);
+        user.createNewBid{ value: 1 ether }(0);
+        user2.createNewBid{ value: 1.25 ether }(0);
 
         IMiniAuctionHouse.Auction memory currentAuction = owner.getCurrentAuction();
         assertEq(currentAuction.amount, 1.25 ether);
@@ -228,7 +228,7 @@ contract MiniAuctionHouseUserPlaceBidTest is DSTest {
 
     function testFailUserBidExpiredAuction() public {
         vm.warp(1000000);
-        user.createNewBid{ value: 1 ether }(1);
+        user.createNewBid{ value: 1 ether }(0);
     }
 }
 
@@ -243,7 +243,7 @@ contract MiniAuctionHouseUserSettleAuctionTest is DSTest {
         owner.unpauseAuctionHouse();
 
         user = new User(payable(address(owner.proxy())));
-        user.createNewBid{ value: 1 ether }(1);
+        user.createNewBid{ value: 1 ether }(0);
     }
 
     function testFailUserSettleAuctionBeforeEndTime() public {
@@ -266,7 +266,7 @@ contract MiniAuctionHouseUserSettleAuctionTest is DSTest {
         // user should receieve token
         assertEq(IERC721(address(owner.miniToken())).balanceOf(address(user)), 1);
         // new auction should have started - we can bid on the next ID
-        user.createNewBid{ value: 1 ether }(2);
+        user.createNewBid{ value: 1 ether }(1);
     }
 
     function testOtherUserCanSettleAuction() public {
