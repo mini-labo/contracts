@@ -8,19 +8,18 @@ chain_id="4" # rinkeby by default
 
 # Auction House vars
 if [ "$chain_id" = "4" ] ; then
-  WETH_ADDRESS=0xc778417e063141139fce010982780140aa0cd5ab # rinkeby
+  weth_address=0xc778417e063141139fce010982780140aa0cd5ab # rinkeby
 elif [ "$chain_id" == "1" ] ; then
-  WETH_ADDRESS=0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2 # mainnet
+  weth_address=0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2 # mainnet
 else
   echo "No WETH address found for given chain_id"
   exit 1
 fi
 
-AUCTION_RESERVE_PRICE=1
-AUCTION_MIN_BID_INCREMENT_PERCENTAGE=2
-AUCTION_DURATION=86400
-AUCTION_TIME_BUFFER=300
-AUCTION_TIME_BUFFER=1
+auction_reserve_price=1
+auction_min_bid_increment_percentage=2
+auction_time_buffer=300
+auction_duration=86400
 
 echo "=== Beginning deployment of MINI contracts ==="
 printf "\n"
@@ -76,11 +75,11 @@ echo "Initializing MiniAuctionHouse with the following args:"
 printf "\n"
 
 echo "_mini: ${mini_token_address}"
-echo "_weth: ${WETH_ADDRESS}"
-echo "_timeBuffer: ${AUCTION_TIME_BUFFER}"
-echo "_reservePrice: ${AUCTION_RESERVE_PRICE}"
-echo "_minBidIncrementPercentage: ${AUCTION_MIN_BID_INCREMENT_PERCENTAGE}"
-echo "_duration: ${AUCTION_DURATION}"
+echo "_weth: ${weth_address}"
+echo "_timeBuffer: ${auction_time_buffer}"
+echo "_reservePrice: ${auction_reserve_price}"
+echo "_minBidIncrementPercentage: ${auction_min_bid_increment_percentage}"
+echo "_duration: ${auction_duration}"
 printf "\n"
 
 echo "publishing auction house initialization transaction..."
@@ -90,11 +89,11 @@ cast send $(echo $auction_house_proxy_address) \
 --private-key $private_key \
 "initialize(address,address,uint256,uint256,uint8,uint256)" \
 $mini_token_address \
-$WETH_ADDRESS \
-$AUCTION_TIME_BUFFER \
-$AUCTION_RESERVE_PRICE \
-$AUCTION_MIN_BID_INCREMENT_PERCENTAGE \
-$AUCTION_DURATION
+$weth_address \
+$auction_time_buffer \
+$auction_reserve_price \
+$auction_min_bid_increment_percentage \
+$auction_duration
 
 printf "\n"
 
