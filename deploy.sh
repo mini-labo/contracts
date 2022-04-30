@@ -7,7 +7,15 @@ compiler_version="v0.8.10+commit.fc410830"
 chain_id="4" # rinkeby by default
 
 # Auction House vars
-WETH_ADDRESS=0xc778417e063141139fce010982780140aa0cd5ab # rinkeby by default TODO: conditional based on chainid
+if [ "$chain_id" = "4" ] ; then
+  WETH_ADDRESS=0xc778417e063141139fce010982780140aa0cd5ab # rinkeby
+elif [ "$chain_id" == "1" ] ; then
+  WETH_ADDRESS=0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2 # mainnet
+else
+  echo "No WETH address found for given chain_id"
+  exit 1
+fi
+
 AUCTION_RESERVE_PRICE=1
 AUCTION_MIN_BID_INCREMENT_PERCENTAGE=2
 AUCTION_DURATION=86400
@@ -103,6 +111,8 @@ forge verify-contract \
 $data_repository_address src/MiniDataRepository.sol:MiniDataRepository \
 $etherscan_api_key
 
+printf "\n"
+
 echo "Verifying MiniToken.sol on etherscan..."
 forge verify-contract \
 --chain-id $chain_id \
@@ -112,6 +122,8 @@ forge verify-contract \
 $mini_token_address src/MiniToken.sol:MiniToken \
 $etherscan_api_key
 
+printf "\n"
+
 echo "Verifying MiniAuctionHouse.sol on etherscan..."
 forge verify-contract \
 --chain-id $chain_id \
@@ -120,10 +132,12 @@ forge verify-contract \
 $auction_house_address src/MiniAuctionHouse.sol:MiniAuctionHouse \
 $etherscan_api_key
 
-echo "Verifying MiniAuctionHouseProxy.sol on etherscan..."
-forge verify-contract \
---chain-id $chain_id \
---num-of-optimizations 200 \
---compiler-version $compiler_version \
-$auction_house_proxy_address src/proxies/MiniAuctionHouseProxy.sol:MiniAuctionHouseProxy \
-$etherscan_api_key
+printf "\n"
+
+echo "Finished deploying and verifying contracts!"
+printf "\n"
+echo "MiniToken: ${mini_token_address}"
+echo "MiniDataRepository: ${data_repository_address}"
+echo "MiniAuctionHouse: ${auction_house_address}"
+echo "MiniAuctionHouse (proxy): ${auction_house_proxy_address}"
+echo "Proxy Admin: ${proxy_admin_address}"
