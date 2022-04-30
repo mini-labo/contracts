@@ -15,6 +15,7 @@ AUCTION_TIME_BUFFER=300
 AUCTION_TIME_BUFFER=1
 
 echo "=== Beginning deployment of MINI contracts ==="
+printf "\n"
 
 echo "Deploying MiniDataRepository.sol..."
 data_repository_address=$(forge create \
@@ -22,8 +23,8 @@ data_repository_address=$(forge create \
   --private-key $private_key \
   src/MiniDataRepository.sol:MiniDataRepository | grep -oP '(?<=Deployed to:).*')
 
-echo "MiniDataRepository deployed to:"
-echo $data_repository_address
+echo "MiniDataRepository deployed to: ${data_repository_address}"
+printf "\n"
 
 echo "Deploying MiniToken.sol..."
 mini_token_address=$(forge create \
@@ -32,8 +33,8 @@ mini_token_address=$(forge create \
   --private-key $private_key \
   src/MiniToken.sol:MiniToken | grep -oP '(?<=Deployed to:).*')
 
-echo "MiniToken deployed to:"
-echo $mini_token_address
+echo "MiniToken deployed to: ${mini_token_address}"
+printf "\n"
 
 echo "Deploying auction proxy admin contract..."
 proxy_admin_address=$(forge create \
@@ -41,8 +42,8 @@ proxy_admin_address=$(forge create \
   --private-key $private_key \
   src/proxies/MiniAuctionHouseProxyAdmin.sol:MiniAuctionHouseProxyAdmin | grep -oP '(?<=Deployed to:).*')
 
-echo "MiniAuctionHouseProxyAdmin deployed to:"
-echo $proxy_admin_address
+echo "MiniAuctionHouseProxyAdmin deployed to: ${proxy_admin_address}"
+printf "\n"
 
 echo "Deploying MiniAuctionHouse.sol..."
 auction_house_address=$(forge create \
@@ -50,13 +51,8 @@ auction_house_address=$(forge create \
   --private-key $private_key \
   src/MiniAuctionHouse.sol:MiniAuctionHouse | grep -oP '(?<=Deployed to:).*')
 
-echo "MiniAuctionHouse deployed to:"
-echo $auction_house_address
-
-auction_init_args_encoded=$(cast abi-encode "initialize(address,address,uint256,uint256,uint8,uint256)" $(echo $mini_token_address) $WETH_ADDRESS $AUCTION_TIME_BUFFER $AUCTION_RESERVE_PRICE $AUCTION_MIN_BID_INCREMENT_PERCENTAGE $AUCTION_DURATION)
-
-echo "set encoded proxy auction house init args:"
-echo $auction_init_args_encoded
+echo "MiniAuctionHouse deployed to: ${auction_house_address}"
+printf "\n"
 
 echo "Deploying MiniAuctionHouseProxy..."
 auction_house_proxy_address=$(forge create \
@@ -65,16 +61,19 @@ auction_house_proxy_address=$(forge create \
   --private-key $private_key \
   src/proxies/MiniAuctionHouseProxy.sol:MiniAuctionHouseProxy | grep -oP '(?<=Deployed to:).*')
 
-echo "MiniAuctionHouseProxy deployed to:"
-echo $auction_house_proxy_address
+echo "MiniAuctionHouseProxy deployed to: ${auction_house_proxy_address}"
+printf "\n"
 
 echo "Initializing MiniAuctionHouse with the following args:"
+printf "\n"
+
 echo "_mini: ${mini_token_address}"
 echo "_weth: ${WETH_ADDRESS}"
 echo "_timeBuffer: ${AUCTION_TIME_BUFFER}"
 echo "_reservePrice: ${AUCTION_RESERVE_PRICE}"
 echo "_minBidIncrementPercentage: ${AUCTION_MIN_BID_INCREMENT_PERCENTAGE}"
 echo "_duration: ${AUCTION_DURATION}"
+printf "\n"
 
 echo "publishing auction house initialization transaction..."
 
@@ -89,11 +88,13 @@ $AUCTION_RESERVE_PRICE \
 $AUCTION_MIN_BID_INCREMENT_PERCENTAGE \
 $AUCTION_DURATION
 
+printf "\n"
+
 echo "== Finished contract deployment! ==="
 
-# echo "Beginning contract verification on etherscan..."
-# 
-# # verify
+echo "Beginning contract verification on etherscan..."
+printf "\n"
+
 echo "Verifying MiniDataRepository.sol on etherscan..."
 forge verify-contract \
 --chain-id $chain_id \
@@ -117,4 +118,12 @@ forge verify-contract \
 --num-of-optimizations 200 \
 --compiler-version $compiler_version \
 $auction_house_address src/MiniAuctionHouse.sol:MiniAuctionHouse \
+$etherscan_api_key
+
+echo "Verifying MiniAuctionHouseProxy.sol on etherscan..."
+forge verify-contract \
+--chain-id $chain_id \
+--num-of-optimizations 200 \
+--compiler-version $compiler_version \
+$auction_house_proxy_address src/proxies/MiniAuctionHouseProxy.sol:MiniAuctionHouseProxy \
 $etherscan_api_key
