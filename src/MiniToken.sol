@@ -38,7 +38,7 @@ contract MiniToken is IMiniToken, Ownable, ERC721Enumerable {
         return tokenCounter + 1;
     }
 
-    function setAuctionHouse(address _auctionHouse) public {
+    function setAuctionHouse(address _auctionHouse) public onlyOwner {
          auctionHouseAddress = _auctionHouse;
     }
 }

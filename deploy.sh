@@ -83,8 +83,7 @@ echo "_duration: ${auction_duration}"
 printf "\n"
 
 echo "publishing auction house initialization transaction..."
-
-cast send $(echo $auction_house_proxy_address) \
+cast send $auction_house_proxy_address \
 --rpc-url $rpc_url \
 --private-key $private_key \
 "initialize(address,address,uint256,uint256,uint8,uint256)" \
@@ -97,8 +96,25 @@ $auction_duration
 
 printf "\n"
 
+echo "publishing MiniToken auction house address set transaction..."
+cast send $mini_token_address \
+--rpc-url $rpc_url \
+--private-key $private_key \
+"setAuctionHouse(address)" $auction_house_proxy_address
+
+printf "\n"
+
+echo "publishing MiniDataRepository MINI token address set transaction..."
+cast send $data_repository_address \
+--rpc-url $rpc_url \
+--private-key $private_key \
+"setMiniTokenAddress(address)" $mini_token_address
+
+printf "\n"
+
 echo "== Finished contract deployment! ==="
 
+printf "\n"
 echo "Beginning contract verification on etherscan..."
 printf "\n"
 
