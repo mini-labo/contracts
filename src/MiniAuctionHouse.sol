@@ -5,7 +5,6 @@
 // LICENSE
 // A modified version of NounsAuctionHouse.sol from Nouns DAO,
 // which itself is a modified version of Zora's AuctionHouse.sol.
-// used with humility and respect under the terms of GPL-3.0 license :)
 
 pragma solidity ^0.8.10;
 
@@ -17,10 +16,12 @@ import "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 
 import "./interfaces/IMiniAuctionHouse.sol";
 import "./interfaces/IMiniToken.sol";
+import "./interfaces/IMiniDataRepository.sol";
 import "./interfaces/IWETH.sol";
 
 contract MiniAuctionHouse is IMiniAuctionHouse, PausableUpgradeable, ReentrancyGuardUpgradeable, OwnableUpgradeable {
     IMiniToken public miniToken;
+    IMiniDataRepository public miniDataRepository;
 
     // Address of the WETH contract
     address public weth;
@@ -33,6 +34,9 @@ contract MiniAuctionHouse is IMiniAuctionHouse, PausableUpgradeable, ReentrancyG
 
     // minimum percentage difference that bids can be incremented by
     uint8 public minBidIncrementPercentage;
+
+    // percentage of sale that will be directly distributed to artist
+    uint8 public artistDistributionPercentage;
 
     // duration of a single auction
     uint256 public duration;
@@ -47,10 +51,12 @@ contract MiniAuctionHouse is IMiniAuctionHouse, PausableUpgradeable, ReentrancyG
       */ 
     function initialize(
         address _mini, 
+        address _dataRepository,
         address _weth,
         uint256 _timeBuffer,
         uint256 _reservePrice,
         uint8 _minBidIncrementPercentage,
+        uint8 _artistDistributionPercentage,
         uint256 _duration
     ) external initializer {
         __Pausable_init();
@@ -60,10 +66,13 @@ contract MiniAuctionHouse is IMiniAuctionHouse, PausableUpgradeable, ReentrancyG
         _pause();
 
         miniToken = IMiniToken(_mini);
+        miniDataRepository = IMiniDataRepository(_dataRepository);
+
         weth = _weth;
         timeBuffer = _timeBuffer;
         reservePrice = _reservePrice;
         minBidIncrementPercentage = _minBidIncrementPercentage;
+        artistDistributionPercentage = _artistDistributionPercentage;
         duration = _duration;
     }
 
@@ -140,11 +149,17 @@ contract MiniAuctionHouse is IMiniAuctionHouse, PausableUpgradeable, ReentrancyG
         emit AuctionMinBidIncrementPercentageUpdated(_minBidIncrementPercentage);
     }
 
+    function setArtistDistributionPercentage(uint8 _artistDistributionPercentage) external override onlyOwner {
+        artistDistributionPercentage = _artistDistributionPercentage;
+
+        emit AuctionArtistDistributionPercentageUpdated(_artistDistributionPercentage);
+    }
+
     // Create an auction
     // Auction details are stored in state. The mini to be auctioned is fetched from the data repository entry
     // corresponding to the next ID to be minted.
     function _createAuction() internal {
-        uint256 miniId = miniToken.nextTokenId() - 1; // index starting at 0
+        uint256 miniId = miniToken.tokenCounter(); // index starting at 0
         uint256 startTime = block.timestamp;
         uint256 endTime = startTime + duration;
 
@@ -171,7 +186,7 @@ contract MiniAuctionHouse is IMiniAuctionHouse, PausableUpgradeable, ReentrancyG
 
         if (_auction.bidder == address(0)) {
             // no bids
-            // restart auction with same token. TODO: add override
+            // restart auction with same token
             _createAuction();
         } else {
             // mint to winner
@@ -179,7 +194,16 @@ contract MiniAuctionHouse is IMiniAuctionHouse, PausableUpgradeable, ReentrancyG
         }
 
         if (_auction.amount > 0) {
-            _safeTransferETHWithFallback(owner(), _auction.amount);
+            address artist = miniDataRepository.artistFor(_auction.miniId);
+            if (artist != address(0)) {
+                uint256 artistReward = (_auction.amount / 100) * artistDistributionPercentage;
+                uint256 remainder = _auction.amount - artistReward;
+
+                _safeTransferETHWithFallback(artist, artistReward);
+                _safeTransferETHWithFallback(owner(), remainder);
+            } else {
+                _safeTransferETHWithFallback(owner(), _auction.amount);
+            }
         }
 
         emit AuctionSettled(_auction.miniId, _auction.bidder, _auction.amount);

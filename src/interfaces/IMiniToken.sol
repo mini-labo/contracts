@@ -9,5 +9,7 @@ interface IMiniToken {
 
     function nextTokenId() external view returns (uint256);
 
+    function tokenCounter() external view returns (uint256);
+
     event TokenCreated(uint256 indexed tokenId);
 }

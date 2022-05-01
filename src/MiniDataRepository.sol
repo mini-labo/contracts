@@ -18,8 +18,11 @@ contract MiniDataRepository is IMiniDataRepository, Ownable {
     // The curators are addresses whitelisted to add data to the repository.
     mapping(address => bool) curatorAddresses;
 
-    // mapping of token ID to address pointers
+    // mapping of token ID to address pointers of addresses containing metadata bytes
     mapping(uint256 => address) public tokenDataAddresses;
+
+    // mapping of token ID to artist address
+    mapping(uint256 => address) public artistFor;
 
     // id of next dataset to be inserted into repository
     uint256 private nextDataId;
@@ -37,6 +40,11 @@ contract MiniDataRepository is IMiniDataRepository, Ownable {
         address dataAddress = SSTORE2.write(_encodedMetadata);
         tokenDataAddresses[nextDataId] = dataAddress;
         nextDataId = nextDataId += 1;
+    }
+
+    // set the artist to be credited for a specific data set.
+    function setArtist(uint256 _id, address _artist) external onlyCurator {
+        artistFor[_id] = _artist;
     }
 
     // edit a data entry.
