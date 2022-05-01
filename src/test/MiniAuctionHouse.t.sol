@@ -44,10 +44,11 @@ contract Owner {
             address(miniToken),
             address(miniDataRepository),
             address(0),
-            1,
-            0.25 ether,
-            5,
-            666
+            1, // time buffer
+            0.25 ether, // reserve price
+            5, // min bid increment %
+            40, // artist distribution %
+            666 // duration
         );
     }
 
@@ -85,6 +86,10 @@ contract Owner {
 
     function setArtistForId(uint256 _id, address _artist) public {
         miniDataRepository.setArtist(_id, _artist);
+    }
+
+    function setArtistDistributionPercentage(uint8 _percentage) public {
+        MiniAuctionHouse(address(proxy)).setArtistDistributionPercentage(_percentage);
     }
 }
 
@@ -312,5 +317,27 @@ contract MiniAuctionHouseUserSettleAuctionTest is DSTest {
         assertEq(address(user2).balance, (settledAuctionAmount / 100) * 40);
         assertEq(address(owner).balance, (settledAuctionAmount - (settledAuctionAmount / 100) * 40));
         assertGe(address(owner).balance, (settledAuctionAmount / 100) * 60); // sanity check - owner should end up with the remainder
+    }
+
+    function testArtistProfitShareFuzzPercentageFuzzAmount(uint8 _percentage, uint72 _amount) public {
+        vm.assume(_amount > 1.1 ether);
+        vm.assume(_percentage <= 100);
+        User user2 = new User(payable(address(owner.proxy())));
+
+        user.createNewBid{ value: _amount }(0);
+
+        owner.setArtistDistributionPercentage(_percentage);
+
+        IMiniAuctionHouse.Auction memory currentAuction = owner.getCurrentAuction();
+        uint256 settledAuctionAmount = currentAuction.amount;
+
+        owner.setArtistForId(0, address(user2));
+        vm.warp(668);
+        user.settleAuction();
+
+        assertEq(address(user2).balance, (settledAuctionAmount / 100) * _percentage);
+        assertEq(address(owner).balance, (settledAuctionAmount - (settledAuctionAmount / 100) * _percentage));
+        assertGe(address(owner).balance, (settledAuctionAmount / 100) * (100 - _percentage)); // sanity check - owner should end up with the remainder
+
     }
 }

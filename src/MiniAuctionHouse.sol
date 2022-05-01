@@ -5,7 +5,6 @@
 // LICENSE
 // A modified version of NounsAuctionHouse.sol from Nouns DAO,
 // which itself is a modified version of Zora's AuctionHouse.sol.
-// used with humility and respect under the terms of GPL-3.0 license :)
 
 pragma solidity ^0.8.10;
 
@@ -36,6 +35,9 @@ contract MiniAuctionHouse is IMiniAuctionHouse, PausableUpgradeable, ReentrancyG
     // minimum percentage difference that bids can be incremented by
     uint8 public minBidIncrementPercentage;
 
+    // percentage of sale that will be directly distributed to artist
+    uint8 public artistDistributionPercentage;
+
     // duration of a single auction
     uint256 public duration;
 
@@ -54,6 +56,7 @@ contract MiniAuctionHouse is IMiniAuctionHouse, PausableUpgradeable, ReentrancyG
         uint256 _timeBuffer,
         uint256 _reservePrice,
         uint8 _minBidIncrementPercentage,
+        uint8 _artistDistributionPercentage,
         uint256 _duration
     ) external initializer {
         __Pausable_init();
@@ -69,6 +72,7 @@ contract MiniAuctionHouse is IMiniAuctionHouse, PausableUpgradeable, ReentrancyG
         timeBuffer = _timeBuffer;
         reservePrice = _reservePrice;
         minBidIncrementPercentage = _minBidIncrementPercentage;
+        artistDistributionPercentage = _artistDistributionPercentage;
         duration = _duration;
     }
 
@@ -145,11 +149,17 @@ contract MiniAuctionHouse is IMiniAuctionHouse, PausableUpgradeable, ReentrancyG
         emit AuctionMinBidIncrementPercentageUpdated(_minBidIncrementPercentage);
     }
 
+    function setArtistDistributionPercentage(uint8 _artistDistributionPercentage) external override onlyOwner {
+        artistDistributionPercentage = _artistDistributionPercentage;
+
+        emit AuctionArtistDistributionPercentageUpdated(_artistDistributionPercentage);
+    }
+
     // Create an auction
     // Auction details are stored in state. The mini to be auctioned is fetched from the data repository entry
     // corresponding to the next ID to be minted.
     function _createAuction() internal {
-        uint256 miniId = miniToken.nextTokenId() - 1; // index starting at 0
+        uint256 miniId = miniToken.tokenCounter(); // index starting at 0
         uint256 startTime = block.timestamp;
         uint256 endTime = startTime + duration;
 
@@ -176,7 +186,7 @@ contract MiniAuctionHouse is IMiniAuctionHouse, PausableUpgradeable, ReentrancyG
 
         if (_auction.bidder == address(0)) {
             // no bids
-            // restart auction with same token. TODO: add override
+            // restart auction with same token
             _createAuction();
         } else {
             // mint to winner
@@ -186,11 +196,11 @@ contract MiniAuctionHouse is IMiniAuctionHouse, PausableUpgradeable, ReentrancyG
         if (_auction.amount > 0) {
             address artist = miniDataRepository.artistFor(_auction.miniId);
             if (artist != address(0)) {
-                uint256 artistReward = (_auction.amount / 100) * 40;
-                uint256 ownerReward = _auction.amount - artistReward;
+                uint256 artistReward = (_auction.amount / 100) * artistDistributionPercentage;
+                uint256 remainder = _auction.amount - artistReward;
 
                 _safeTransferETHWithFallback(artist, artistReward);
-                _safeTransferETHWithFallback(owner(), ownerReward);
+                _safeTransferETHWithFallback(owner(), remainder);
             } else {
                 _safeTransferETHWithFallback(owner(), _auction.amount);
             }
