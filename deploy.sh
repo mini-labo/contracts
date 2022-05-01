@@ -75,6 +75,7 @@ echo "Initializing MiniAuctionHouse with the following args:"
 printf "\n"
 
 echo "_mini: ${mini_token_address}"
+echo "_dataRepository: ${data_repository_address}"
 echo "_weth: ${weth_address}"
 echo "_timeBuffer: ${auction_time_buffer}"
 echo "_reservePrice: ${auction_reserve_price}"
@@ -86,8 +87,9 @@ echo "publishing auction house initialization transaction..."
 cast send $auction_house_proxy_address \
 --rpc-url $rpc_url \
 --private-key $private_key \
-"initialize(address,address,uint256,uint256,uint8,uint256)" \
+"initialize(address,address,address,uint256,uint256,uint8,uint256)" \
 $mini_token_address \
+$data_repository_address \
 $weth_address \
 $auction_time_buffer \
 $auction_reserve_price \
