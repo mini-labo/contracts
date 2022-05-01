@@ -17,10 +17,12 @@ import "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 
 import "./interfaces/IMiniAuctionHouse.sol";
 import "./interfaces/IMiniToken.sol";
+import "./interfaces/IMiniDataRepository.sol";
 import "./interfaces/IWETH.sol";
 
 contract MiniAuctionHouse is IMiniAuctionHouse, PausableUpgradeable, ReentrancyGuardUpgradeable, OwnableUpgradeable {
     IMiniToken public miniToken;
+    IMiniDataRepository public miniDataRepository;
 
     // Address of the WETH contract
     address public weth;
@@ -47,6 +49,7 @@ contract MiniAuctionHouse is IMiniAuctionHouse, PausableUpgradeable, ReentrancyG
       */ 
     function initialize(
         address _mini, 
+        address _dataRepository,
         address _weth,
         uint256 _timeBuffer,
         uint256 _reservePrice,
@@ -60,6 +63,8 @@ contract MiniAuctionHouse is IMiniAuctionHouse, PausableUpgradeable, ReentrancyG
         _pause();
 
         miniToken = IMiniToken(_mini);
+        miniDataRepository = IMiniDataRepository(_dataRepository);
+
         weth = _weth;
         timeBuffer = _timeBuffer;
         reservePrice = _reservePrice;
@@ -179,7 +184,16 @@ contract MiniAuctionHouse is IMiniAuctionHouse, PausableUpgradeable, ReentrancyG
         }
 
         if (_auction.amount > 0) {
-            _safeTransferETHWithFallback(owner(), _auction.amount);
+            address artist = miniDataRepository.artistFor(_auction.miniId);
+            if (artist != address(0)) {
+                uint256 artistReward = (_auction.amount / 100) * 40;
+                uint256 ownerReward = _auction.amount - artistReward;
+
+                _safeTransferETHWithFallback(artist, artistReward);
+                _safeTransferETHWithFallback(owner(), ownerReward);
+            } else {
+                _safeTransferETHWithFallback(owner(), _auction.amount);
+            }
         }
 
         emit AuctionSettled(_auction.miniId, _auction.bidder, _auction.amount);

@@ -15,6 +15,9 @@ address constant CHEATCODE_ADDRESS = 0x7109709ECfa91a80626fF3989D68f67F5b1DD12D;
 interface Vm {
   // Sets the block.timestamp number to `x`.
   function warp(uint256 x) external;
+
+  // fuzzing variables must satisfy assume condition to run test case
+  function assume(bool) external;
 }
 
 contract Owner {
@@ -39,22 +42,13 @@ contract Owner {
 
         MiniAuctionHouse(address(proxy)).initialize(
             address(miniToken),
+            address(miniDataRepository),
             address(0),
             1,
             0.25 ether,
             5,
             666
         );
-    }
-
-    function initAuctionHouse(
-      address _weth, 
-      uint256 _timeBuffer, 
-      uint256 _reservePrice, 
-      uint8 _minBidIncrementPercentage,
-      uint256 _duration
-    ) public {
-        miniAuctionHouse.initialize(address(miniToken), _weth, _timeBuffer, _reservePrice, _minBidIncrementPercentage, _duration);
     }
 
     function unpauseAuctionHouse() public {
@@ -87,6 +81,10 @@ contract Owner {
 
     function createNewBid(uint256 _miniId) public payable {
         MiniAuctionHouse(address(proxy)).createBid{ value: msg.value }(_miniId);
+    }
+
+    function setArtistForId(uint256 _id, address _artist) public {
+        miniDataRepository.setArtist(_id, _artist);
     }
 }
 
@@ -215,6 +213,16 @@ contract MiniAuctionHouseUserPlaceBidTest is DSTest {
         assertEq(address(user).balance, 1 ether);
     }
 
+    function testUserFuzzBidAmount(uint96 _amount) public {
+        vm.assume(_amount > 0.27 ether);
+
+        user.createNewBid{ value: _amount }(0);
+
+        IMiniAuctionHouse.Auction memory currentAuction = owner.getCurrentAuction();
+        assertEq(currentAuction.amount, _amount);
+        assertEq(currentAuction.bidder, address(user));
+    }
+
     function testUserBidAmountAndBidderUpdate() public {
         User user2 = new User(payable(address(owner.proxy())));
 
@@ -278,5 +286,31 @@ contract MiniAuctionHouseUserSettleAuctionTest is DSTest {
         assertEq(IERC721(address(owner.miniToken())).balanceOf(address(user)), 1);
         // user2 doesnt, they just settled
         assertEq(IERC721(address(owner.miniToken())).balanceOf(address(user2)), 0);
+    }
+
+    function testArtistProfitShare() public {
+        User user2 = new User(payable(address(owner.proxy())));
+
+        owner.setArtistForId(0, address(user2));
+        vm.warp(668);
+        user.settleAuction();
+    }
+
+    function testArtistProfitShareFuzzAmount(uint72 _amount) public {
+        vm.assume(_amount > 1.1 ether);
+        User user2 = new User(payable(address(owner.proxy())));
+
+        user.createNewBid{ value: _amount }(0);
+
+        IMiniAuctionHouse.Auction memory currentAuction = owner.getCurrentAuction();
+        uint256 settledAuctionAmount = currentAuction.amount;
+
+        owner.setArtistForId(0, address(user2));
+        vm.warp(668);
+        user.settleAuction();
+
+        assertEq(address(user2).balance, (settledAuctionAmount / 100) * 40);
+        assertEq(address(owner).balance, (settledAuctionAmount - (settledAuctionAmount / 100) * 40));
+        assertGe(address(owner).balance, (settledAuctionAmount / 100) * 60); // sanity check - owner should end up with the remainder
     }
 }
