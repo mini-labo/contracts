@@ -52,7 +52,7 @@ contract MiniTokenTest is DSTest {
         minitoken = new MiniToken(address(dataRepository)); 
         minitoken.setAuctionHouse(address(FAKE_AUCTION_HOUSE_ADDRESS));
 
-        genesisByteData = dataRepository.formatTokenData('test', 'test_description', '{\"test_attribute\":\"test\"}', _genesisTokenData);
+        genesisByteData = dataRepository.formatTokenData('test', 'test_description', 'three', '1', _genesisTokenData);
         dataRepository.setMiniTokenAddress(address(minitoken));
         dataRepository.addData(genesisByteData);
 

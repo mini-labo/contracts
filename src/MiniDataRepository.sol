@@ -42,7 +42,7 @@ contract MiniDataRepository is IMiniDataRepository, Ownable {
         nextDataId = nextDataId += 1;
     }
 
-    // set the artist to be credited for a specific data set.
+    // set the address of artist to be credited for a specific data set. This enables revenue sharing for the artist on auction sales.
     function setArtist(uint256 _id, address _artist) external onlyCurator {
         artistFor[_id] = _artist;
     }
@@ -66,10 +66,11 @@ contract MiniDataRepository is IMiniDataRepository, Ownable {
 
     // formats token information into metadata bytes
     function formatTokenData(
-      string memory _name,
-      string memory _description,
-      string memory _attributes,
-      string memory _imageData
+      string calldata _name,
+      string calldata _description,
+      string calldata _artistName,
+      string calldata _generation,
+      string calldata _imageData
     ) public pure returns (bytes memory) {
         string memory baseUrl = "data:application/json;base64,";
         return abi.encodePacked(
@@ -77,7 +78,7 @@ contract MiniDataRepository is IMiniDataRepository, Ownable {
             Base64.encode(bytes(abi.encodePacked(
                 '{"name":"', _name, '",',
                 '"description":"', _description, '",', 
-                '"attributes":', _attributes, ',',
+                '"attributes":[{"trait_type":"artist","value":"', _artistName, '"},{"display_type":"number","trait_type":"generation","value":', _generation, '}],'
                 '"image":"', _imageData, '"}'
             )))
         );
