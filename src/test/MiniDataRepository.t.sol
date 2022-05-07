@@ -14,7 +14,7 @@ contract Owner {
     }
 
     function prepareTokenMetadata(string memory _imageData) public view returns (bytes memory) {
-        return miniDataRepository.formatTokenData('test', 'test_description', '{\"test_attribute\":\"test\"}', _imageData);
+        return miniDataRepository.formatTokenData('test', 'test_description', 'three', '1', _imageData);
     }
 
     function addTokenData(bytes memory _tokenMetadata) public {
@@ -54,7 +54,7 @@ contract Curator {
     }
 
     function prepareTokenMetadata(string memory _imageData) public view returns (bytes memory) {
-        return miniDataRepository.formatTokenData('test', 'test_description', '{\"test_attribute\":\"test\"}', _imageData);
+        return miniDataRepository.formatTokenData('test', 'test_description', 'three', '1', _imageData);
     }
 
     function addTokenData(bytes memory _tokenMetadata) public {

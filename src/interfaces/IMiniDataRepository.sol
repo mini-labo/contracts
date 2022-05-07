@@ -11,4 +11,14 @@ interface IMiniDataRepository {
     function setArtist(uint256 _id, address _address) external;
     // get an artist for a dataset
     function artistFor(uint256 _id) external view returns (address);
+
+    event TokenDataAdded(uint256 indexed id);
+
+    event TokenDataEdited(uint256 indexed id);
+
+    event ArtistForDataUpdated(uint256 indexed id, address artist);
+
+    event CuratorAdded(address _curator);
+
+    event CuratorRemoved(address _curator);
 }
