@@ -39,24 +39,30 @@ contract MiniDataRepository is IMiniDataRepository, Ownable {
 
         address dataAddress = SSTORE2.write(_encodedMetadata);
         tokenDataAddresses[nextDataId] = dataAddress;
+        emit TokenDataAdded(nextDataId);
+
         nextDataId = nextDataId += 1;
     }
 
     // set the address of artist to be credited for a specific data set. This enables revenue sharing for the artist on auction sales.
     function setArtist(uint256 _id, address _artist) external onlyCurator {
         artistFor[_id] = _artist;
+
+        emit ArtistForDataUpdated(_id, _artist);
     }
 
     // edit a data entry.
     // This is an emergency method intended for curators to repair any malformed data that is uploaded.
     // This will not be possible to invoke once data has been associated with a token or auction.
-    function editData(uint256 _id, bytes memory _encodedMetadata) external onlyCurator {
-        // token has not been minted, and is not being auctioned (next to be minted)
+    function editData(uint256 _id, bytes calldata _encodedMetadata) external onlyCurator {
+        // token data can not be edited if the corresponding tokenId has been minted, or is being auctioned (next to be minted)
         require(_id > IMiniToken(miniTokenAddress).nextTokenId(), "data can no longer be edited");
         require(_encodedMetadata.length < 4000, "metadata must be less than 4000 bytes");
 
         address newDataAddress = SSTORE2.write(_encodedMetadata);
         tokenDataAddresses[_id] = newDataAddress;
+
+        emit TokenDataEdited(_id);
     }
 
     // retreive metadata bytes from storage contract address
@@ -65,6 +71,8 @@ contract MiniDataRepository is IMiniDataRepository, Ownable {
     }
 
     // formats token information into metadata bytes
+    // this is externally callable and intended to be used as a helper call to construct the appropriate bytes
+    // to be used with an addData transaction
     function formatTokenData(
       string calldata _name,
       string calldata _description,
@@ -90,10 +98,14 @@ contract MiniDataRepository is IMiniDataRepository, Ownable {
 
     function addCurator(address _newCurator) external onlyOwner {
         curatorAddresses[_newCurator] = true;
+
+        emit CuratorAdded(_newCurator);
     }
 
     function removeCurator(address _curatorToBeRemoved) external onlyOwner {
         curatorAddresses[_curatorToBeRemoved] = false;
+
+        emit CuratorRemoved(_curatorToBeRemoved);
     }
 
     function isCurator(address _address) public view returns (bool) {

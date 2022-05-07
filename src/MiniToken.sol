@@ -5,13 +5,13 @@
 pragma solidity ^0.8.10;
 
 import "openzeppelin-contracts/contracts/access/Ownable.sol";
-import "openzeppelin-contracts/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
+import "openzeppelin-contracts/contracts/token/ERC721/ERC721.sol";
 import "base64/base64.sol";
 
 import "./interfaces/IMiniDataRepository.sol";
 import "./interfaces/IMiniToken.sol";
 
-contract MiniToken is IMiniToken, Ownable, ERC721Enumerable {
+contract MiniToken is IMiniToken, Ownable, ERC721 {
     IMiniDataRepository dataRepository;
 
     address private auctionHouseAddress;
@@ -24,7 +24,7 @@ contract MiniToken is IMiniToken, Ownable, ERC721Enumerable {
 
     function mintTokenTo(address to) public {
         require(msg.sender == auctionHouseAddress, "invalid sender");
-        _safeMint(to, tokenCounter);
+        _mint(to, tokenCounter);
         emit TokenCreated(tokenCounter);
 
         tokenCounter = tokenCounter += 1;
@@ -38,7 +38,7 @@ contract MiniToken is IMiniToken, Ownable, ERC721Enumerable {
         return tokenCounter + 1;
     }
 
-    function setAuctionHouse(address _auctionHouse) public onlyOwner {
+    function setAuctionHouse(address _auctionHouse) external onlyOwner {
          auctionHouseAddress = _auctionHouse;
     }
 }
