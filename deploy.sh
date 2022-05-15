@@ -136,6 +136,12 @@ cast send $data_repository_address \
 --private-key $private_key \
 "addData(bytes)" $encoded_seed_data
 
+echo "unpausing auction house..."
+cast send $auction_house_proxy_address \
+--rpc-url $rpc_url \
+--private-key $private_key \
+"unpause()"
+
 printf "\n"
 
 echo "== Finished contract deployment! ==="
