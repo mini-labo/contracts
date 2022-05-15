@@ -338,6 +338,5 @@ contract MiniAuctionHouseUserSettleAuctionTest is DSTest {
         assertEq(address(user2).balance, (settledAuctionAmount / 100) * _percentage);
         assertEq(address(owner).balance, (settledAuctionAmount - (settledAuctionAmount / 100) * _percentage));
         assertGe(address(owner).balance, (settledAuctionAmount / 100) * (100 - _percentage)); // sanity check - owner should end up with the remainder
-
     }
 }

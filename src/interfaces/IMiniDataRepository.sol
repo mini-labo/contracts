@@ -5,8 +5,8 @@
 pragma solidity ^0.8.10;
 
 interface IMiniDataRepository {
-    // retrieve a token's saved metadata as bytes
-    function tokenMetadata(uint256 _id) external view returns (bytes memory);
+    // retrieve a token's saved metadata
+    function tokenData(uint256 _id) external view returns (string memory);
     // set an artist for a dataset
     function setArtist(uint256 _id, address _address) external;
     // get an artist for a dataset

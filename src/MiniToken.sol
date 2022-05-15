@@ -6,7 +6,6 @@ pragma solidity ^0.8.10;
 
 import "openzeppelin-contracts/contracts/access/Ownable.sol";
 import "openzeppelin-contracts/contracts/token/ERC721/ERC721.sol";
-import "base64/base64.sol";
 
 import "./interfaces/IMiniDataRepository.sol";
 import "./interfaces/IMiniToken.sol";
@@ -31,7 +30,8 @@ contract MiniToken is IMiniToken, Ownable, ERC721 {
     }
 
     function tokenURI(uint256 _tokenId) public view override returns (string memory) {
-        return string(dataRepository.tokenMetadata(_tokenId));
+        require(_exists(_tokenId), 'URI query for nonexistent token');
+        return dataRepository.tokenData(_tokenId);
     }
 
     function nextTokenId() external view returns (uint256) {

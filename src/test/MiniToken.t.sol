@@ -36,6 +36,11 @@ contract User is IERC721Receiver {
         m.mintTokenTo(address(this));
         vm.stopPrank();
     }
+
+    // not pranking as auction house
+    function attemptMintAsOrdinaryUser() public {
+        m.mintTokenTo(address(this));
+    }
 }
 
 contract MiniTokenTest is DSTest {
@@ -44,6 +49,7 @@ contract MiniTokenTest is DSTest {
     User user;
 
     bytes public genesisByteData;
+    string public genesisJsonData;
 
     string public _genesisTokenData = 'data:image/svg+xml;base64,PHN2ZyBpbWFnZS1yZW5kZXJpbmc9InBpeGVsYXRlZCIgcHJlc2VydmVBc3BlY3RSYXRpbz0ieE1pbllNaW4gbWVldCIgdmlld0JveD0iMCAwIDM1MCAzNTAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiID4gPGltYWdlIHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIHhsaW5rOmhyZWY9ImRhdGE6aW1hZ2UvYm1wO2Jhc2U2NCxRazBDQVFBQUFBQUFBSUlBQUFCc0FBQUFJQUFBQUNBQUFBQUJBQUVBQUFBQUFJQUFBQUFBQUFBQUFBQUFBQUlBQUFBQ0FBQUFBQUQvQUFEL0FBRC9BQUFBQUFBQS8wSkhVbk1BQUFBQUFBQUFBQUFBQUVBQUFBQUFBQUFBQUFBQUFFQUFBQUFBQUFBQUFBQUFBRUFBQUFBQUFBQUFBQUFBQUFELy8vOEFBQUFBQUFBQUFBQUFBQUFBQUE1d0FBQVJpQUFBRTVBQUFCLzRBQUIvL0FBQW4vb0FBSS82QUFCUDlBQUFKK2dBQUJad0FBQVA4QUFBRUFnQUFHQUVBQUQwSmdBRDlDY0FBZklYQUFINER3QUIvQThBQVA0ZkFBRC92Z0FBZi80QUFELzhBQUFmK0FBQUorUUFBRXBpQUFCQmtnQUFJa1FBQUJ3NEFBQUFBQUFBQUFBQSIgLz4gPC9zdmc+Cg==';
 
@@ -52,7 +58,8 @@ contract MiniTokenTest is DSTest {
         minitoken = new MiniToken(address(dataRepository)); 
         minitoken.setAuctionHouse(address(FAKE_AUCTION_HOUSE_ADDRESS));
 
-        genesisByteData = dataRepository.formatTokenData('test', 'test_description', 'three', '1', _genesisTokenData);
+        genesisByteData = abi.encode('test', 'test_description', 'three', '1', _genesisTokenData);
+        genesisJsonData = dataRepository.formatTokenJson('test', 'test_description', 'three', '1', _genesisTokenData);
         dataRepository.setMiniTokenAddress(address(minitoken));
         dataRepository.addData(genesisByteData);
 
@@ -68,9 +75,13 @@ contract MiniTokenTest is DSTest {
         assertEq(minitoken.tokenCounter(), 1);
     }
 
+    function testFailUserMint() public {
+        user.attemptMintAsOrdinaryUser();
+    }
+
     function testURIRetrieval() public {
         user.mintMiniToken();
-        assertEq(minitoken.tokenURI(0), string(genesisByteData));
+        assertEq(minitoken.tokenURI(0), genesisJsonData);
         console.log(minitoken.tokenURI(0));
     }
 
@@ -81,8 +92,11 @@ contract MiniTokenTest is DSTest {
         user.mintMiniToken();
         user.mintMiniToken();
 
-        assertEq(minitoken.tokenURI(0), string(genesisByteData));
-        assertEq(minitoken.tokenURI(1), string(genesisByteData)); 
-        assertEq(minitoken.tokenURI(2), ''); // no data inserted for id 2
+        assertEq(minitoken.tokenURI(0), dataRepository.tokenData(0));
+        assertEq(minitoken.tokenURI(1), dataRepository.tokenData(1)); 
+    }
+
+    function testFailNonExistingTokenId() public {
+        minitoken.tokenURI(99);
     }
 }
