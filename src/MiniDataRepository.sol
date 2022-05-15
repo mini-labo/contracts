@@ -44,7 +44,8 @@ contract MiniDataRepository is IMiniDataRepository, Ownable {
         nextDataId = nextDataId += 1;
     }
 
-    // set the address of artist to be credited for a specific data set. This enables revenue sharing for the artist on auction sales.
+    // set the address of artist to be credited for a specific data set. 
+    // This enables revenue sharing for the artist on auction sales.
     function setArtist(uint256 _id, address _artist) external onlyCurator {
         artistFor[_id] = _artist;
 
@@ -55,7 +56,8 @@ contract MiniDataRepository is IMiniDataRepository, Ownable {
     // This is an emergency method intended for curators to repair any malformed data that is uploaded.
     // This will not be possible to invoke once data has been associated with a token or auction.
     function editData(uint256 _id, bytes calldata _encodedMetadata) external onlyCurator {
-        // token data can not be edited if the corresponding tokenId has been minted, or is being auctioned (next to be minted)
+        // token data can not be edited if the corresponding tokenId has been minted, 
+        // or is being auctioned (next to be minted)
         require(_id > IMiniToken(miniTokenAddress).nextTokenId(), "data can no longer be edited");
         require(_encodedMetadata.length < 4000, "metadata must be less than 4000 bytes");
 
@@ -66,30 +68,37 @@ contract MiniDataRepository is IMiniDataRepository, Ownable {
     }
 
     // retreive metadata bytes from storage contract address
-    function tokenMetadata(uint256 _id) external view returns (bytes memory) {
-        return SSTORE2.read(tokenDataAddresses[_id]);
-    }
+    function tokenData(uint256 _id) external view returns (string memory) {
+        (
+          string memory _name,
+          string memory _description,
+          string memory _artistName,
+          string memory _generation,
+          string memory _imageData
+        ) = abi.decode(SSTORE2.read(tokenDataAddresses[_id]), (string, string, string, string, string));
 
-    // formats token information into metadata bytes
-    // this is externally callable and intended to be used as a helper call to construct the appropriate bytes
-    // to be used with an addData transaction
-    function formatTokenData(
-      string calldata _name,
-      string calldata _description,
-      string calldata _artistName,
-      string calldata _generation,
-      string calldata _imageData
-    ) public pure returns (bytes memory) {
+        return formatTokenJson(_name, _description, _artistName, _generation, _imageData);
+    }
+ 
+    // formats token information into metadata
+    function formatTokenJson(
+      string memory _name,
+      string memory _description,
+      string memory _artistName,
+      string memory _generation,
+      string memory _imageData
+    ) public pure returns (string memory) {
         string memory baseUrl = "data:application/json;base64,";
-        return abi.encodePacked(
+        return string(abi.encodePacked(
             baseUrl,
             Base64.encode(bytes(abi.encodePacked(
                 '{"name":"', _name, '",',
                 '"description":"', _description, '",', 
+                '"animation_url":"', _imageData, '",',
                 '"attributes":[{"trait_type":"artist","value":"', _artistName, '"},{"display_type":"number","trait_type":"generation","value":', _generation, '}],'
                 '"image":"', _imageData, '"}'
             )))
-        );
+        ));
     }
 
     function setMiniTokenAddress(address _miniToken) external onlyOwner {

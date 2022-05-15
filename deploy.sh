@@ -6,6 +6,12 @@ etherscan_api_key=$ETHERSCAN_API_KEY
 compiler_version="v0.8.10+commit.fc410830"
 chain_id="4" # rinkeby by default
 
+seed_data_name="NUMBER ONE" 
+seed_data_description="The first MINI"
+seed_data_artist_name="three"
+seed_generation="1"
+seed_image_data="data:image/svg+xml;base64,PHN2ZyBpbWFnZS1yZW5kZXJpbmc9InBpeGVsYXRlZCIgcHJlc2VydmVBc3BlY3RSYXRpbz0ieE1pbllNaW4gbWVldCIgdmlld0JveD0iMCAwIDM1MCAzNTAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiPjxpbWFnZSB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiB4bGluazpocmVmPSJkYXRhOmltYWdlL2dpZjtiYXNlNjQsUjBsR09EZGhJQUFnQUpFQUFBQUFBUC8vL3dBQUFBQUFBQ0gvQzA1RlZGTkRRVkJGTWk0d0F3RUFBQUFoK1FRSkNnQUFBQ3dBQUFBQUlBQWdBQUFDYW95UHFjdnQzNFJFVXNCNGJORDdLbTVNM2VpRnBpYVM1VmhWNWtxMU1oekxNMjNuNEtWYmQ1bXJwU0RCUkF2NEV5SmRLdC9RWVd1R25nK25kTFBqWlNtMERHTzcwblc1SXVZWU5RTVRwMUUxaHQyR29jWHViOCtNNjQxZnZ0ZWVrMUpIVkVhMVozaUlVQUFBSWZrRUNRb0FBQUFzQUFBQUFDQUFJQUFBQW1tTWo2bkw3ZCtFUkZMQWVHelEreXB1VE4zb2hhWW1rdVZZVmVaS3RUSWN5ek50NStDbFczZVpxNlVnd1VRTCtCTWlYUXdtY1phYU9Ia2JIeVcwNDJXdnROZW5LenlDVDZnaERudmNVcXMybFlmVGN4UFJRYldqSis3aXg2dytIdzdIeDRZbVdHaUlVQUFBSWZrRUNRb0FBQUFzQUFBQUFDQUFJQUFBQW1tTWo2bkw3ZCtFUkZMQWVHelEreXB1VE4zb2hhWW1rdVZZVmVaS3RUSWN5ek50NStDbFczZVpxNlVnd1VRTCtCTWlYUXdtTVdrY0VqYyt6a1RLMnhscG1TWlhlUHllVU5nVithajFuR2ZwaDFXbjRvVjY4V3l2ckthTFVTenhpOXJseCtUa1YyaUlVQUFBSWZrRUNRb0FBQUFzQUFBQUFDQUFJQUFBQW1tTWo2bkw3ZCtFUkZMQWVHelEreXB1VE4zb2hhWW1rdVZZVmVaS3RUSWN5ek50NStDbFczZVpxNlVnd1VRTCtCTWlYUXdtY1phYU9Ia2JIeVcwNDJXdnROZW5LenlDVDZnaERudmNVcXMybFlmVGN4UFJRYldqSis3aXg2dytIdzdIeDRZbVdHaUlVQUFBSWZrRUNRb0FBQUFzQUFBQUFDQUFJQUFBQW1xTWo2bkw3ZCtFUkZMQWVHelEreXB1VE4zb2hhWW1rdVZZVmVaS3RUSWN5ek50NStDbFczZVpxNlVnd1VRTCtCTWlYU3JmMEdGcmhwNFBwM1N6NDJVcHRBeGp1OUoxdVNMbUdEVURFNmRSTlliZGhxSEY3bS9Qak91Tlg3N1hucE5TUjFSR3RXZDRpRkFBQURzPSIvPjwvc3ZnPg=="
+
 # Auction House vars
 if [ "$chain_id" = "4" ] ; then
   weth_address=0xc778417e063141139fce010982780140aa0cd5ab # rinkeby
@@ -72,6 +78,11 @@ auction_house_proxy_address=$(forge create \
 echo "MiniAuctionHouseProxy deployed to: ${auction_house_proxy_address}"
 printf "\n"
 
+echo "== Finished contract deployment! ==="
+
+echo "Beginning setup transactions..."
+printf "\n"
+
 echo "Initializing MiniAuctionHouse with the following args:"
 printf "\n"
 
@@ -114,6 +125,16 @@ cast send $data_repository_address \
 --rpc-url $rpc_url \
 --private-key $private_key \
 "setMiniTokenAddress(address)" $mini_token_address
+
+encoded_seed_data=$(cast abi-encode \
+"func(string, string, string, string, string)" \
+"$seed_data_name" "$seed_data_description" "$seed_data_artist_name" "$seed_generation" "$seed_image_data")
+
+echo "publishing token seed data to MiniDataRepository..."
+cast send $data_repository_address \
+--rpc-url $rpc_url \
+--private-key $private_key \
+"addData(bytes)" $encoded_seed_data
 
 printf "\n"
 

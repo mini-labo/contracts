@@ -14,7 +14,11 @@ contract Owner {
     }
 
     function prepareTokenMetadata(string memory _imageData) public view returns (bytes memory) {
-        return miniDataRepository.formatTokenData('test', 'test_description', 'three', '1', _imageData);
+        return abi.encode('test', 'test_description', 'three', '1', _imageData);
+    }
+
+    function prepareTokenJson(string memory _imageData) public view returns (string memory) {
+        return miniDataRepository.formatTokenJson('test', 'test_description', 'three', '1', _imageData);
     }
 
     function addTokenData(bytes memory _tokenMetadata) public {
@@ -29,8 +33,8 @@ contract Owner {
         miniDataRepository.editData(_id, _tokenMetadata);
     }
 
-    function returnTokenData(uint256 _id) public view returns (bytes memory) {
-        return miniDataRepository.tokenMetadata(_id);
+    function returnTokenData(uint256 _id) public view returns (string memory) {
+        return miniDataRepository.tokenData(_id);
     }
 
     function addCurator(address _newCurator) public {
@@ -54,7 +58,11 @@ contract Curator {
     }
 
     function prepareTokenMetadata(string memory _imageData) public view returns (bytes memory) {
-        return miniDataRepository.formatTokenData('test', 'test_description', 'three', '1', _imageData);
+        return abi.encode('test', 'test_description', 'three', '1', _imageData);
+    }
+
+    function prepareTokenJson(string memory _imageData) public view returns (string memory) {
+        return miniDataRepository.formatTokenJson('test', 'test_description', 'three', '1', _imageData);
     }
 
     function addTokenData(bytes memory _tokenMetadata) public {
@@ -69,8 +77,8 @@ contract Curator {
         miniDataRepository.editData(_id, _tokenMetadata);
     }
 
-    function returnTokenData(uint256 _id) public view returns (bytes memory) {
-        return miniDataRepository.tokenMetadata(_id);
+    function returnTokenData(uint256 _id) public view returns (string memory) {
+        return miniDataRepository.tokenData(_id);
     }
 
     function addCurator(address _newCurator) public {
@@ -117,18 +125,23 @@ contract MiniDataRepositoryOwnerTest is DSTest {
 
     function testOwnerAddData() public {
         bytes memory bytesMetadata = owner.prepareTokenMetadata(_genesisTokenImageData);
+        string memory jsonMetadata = owner.prepareTokenJson(_genesisTokenImageData);
+
         owner.addTokenData(bytesMetadata);
-        assertEq(string(owner.returnTokenData(0)), string(bytesMetadata));
+        assertEq(owner.returnTokenData(0), jsonMetadata);
     }
 
     function testOwnerAddDataIdIncrement() public {
         bytes memory bytesMetadata = owner.prepareTokenMetadata(_genesisTokenImageData);
+        string memory jsonMetadata = owner.prepareTokenJson(_genesisTokenImageData);
+
         owner.addTokenData(bytesMetadata);
         owner.addTokenData(bytesMetadata);
         owner.addTokenData(bytesMetadata);
-        assertEq(string(owner.returnTokenData(0)), string(bytesMetadata));
-        assertEq(string(owner.returnTokenData(1)), string(bytesMetadata));
-        assertEq(string(owner.returnTokenData(2)), string(bytesMetadata));
+
+        assertEq(owner.returnTokenData(0), jsonMetadata);
+        assertEq(owner.returnTokenData(1), jsonMetadata);
+        assertEq(owner.returnTokenData(2), jsonMetadata);
     }
 
     function testFailOwnerEditNextMintData() public {
@@ -175,18 +188,22 @@ contract MiniDataRepositoryCuratorTest is DSTest {
 
     function testCuratorAddData() public {
         bytes memory bytesMetadata = owner.prepareTokenMetadata(_genesisTokenImageData);
+        string memory jsonMetadata = owner.prepareTokenJson(_genesisTokenImageData);
+
         curator.addTokenData(bytesMetadata);
-        assertEq(string(curator.returnTokenData(0)), string(bytesMetadata));
+        assertEq(curator.returnTokenData(0), jsonMetadata);
     }
 
     function testCuratorAddDataIdIncrement() public {
         bytes memory bytesMetadata = owner.prepareTokenMetadata(_genesisTokenImageData);
+        string memory jsonMetadata = owner.prepareTokenJson(_genesisTokenImageData);
+
         curator.addTokenData(bytesMetadata);
         curator.addTokenData(bytesMetadata);
         curator.addTokenData(bytesMetadata);
-        assertEq(string(owner.returnTokenData(0)), string(bytesMetadata));
-        assertEq(string(owner.returnTokenData(1)), string(bytesMetadata));
-        assertEq(string(owner.returnTokenData(2)), string(bytesMetadata));
+        assertEq(owner.returnTokenData(0), jsonMetadata);
+        assertEq(owner.returnTokenData(1), jsonMetadata);
+        assertEq(owner.returnTokenData(2), jsonMetadata);
     }
 
     function testFailCuratorEditNextMintData() public {
